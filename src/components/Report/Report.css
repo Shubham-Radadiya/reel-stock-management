@@ -1,0 +1,44 @@
+/* Dashboard Stats */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 1rem;
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  display: block;
+}
+
+.stat-label {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Matrix Styling */
+.matrix-table {
+  width: auto;
+  min-width: 100%;
+}
+
+.matrix-header-shade { background: #334155; color: white; }
+.matrix-header-bf { background: #475569; color: white; }
+.matrix-header-gsm { background: #64748b; color: white; }
+
+.grand-total-cell {
+  background-color: var(--secondary) !important;
+  color: white !important;
+  font-weight: bold;
+}

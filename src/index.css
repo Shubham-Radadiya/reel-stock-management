@@ -1,0 +1,86 @@
+:root {
+  --primary: #1a73e8;
+  --primary-dark: #1557b0;
+  --secondary: #34a853;
+  --danger: #ea4335;
+  --bg-main: #f8f9fa;
+  --bg-card: #ffffff;
+  --sidebar-bg: #1e293b;
+  --sidebar-hover: #334155;
+  --text-main: #1e293b;
+  --text-muted: #64748b;
+  --glass: rgba(255, 255, 255, 0.8);
+  --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+/* Common Utility Styles */
+.glass-card {
+  background: var(--bg-card);
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: var(--shadow);
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.btn-premium {
+  padding: 0.6rem 1.5rem;
+  border-radius: 0.6rem;
+  font-weight: 600;
+  transition: all 0.2s;
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-primary-p {
+  background-color: var(--primary);
+  color: white;
+}
+
+.btn-primary-p:hover {
+  background-color: var(--primary-dark);
+  transform: translateY(-1px);
+}
+
+.custom-table-container {
+  overflow-x: auto;
+  border-radius: 0.8rem;
+}
+
+.custom-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.custom-table th {
+  background-color: #f1f5f9;
+  padding: 1rem;
+  text-align: center;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.custom-table td {
+  padding: 1rem;
+  text-align: center;
+  border-bottom: 1px solid #f1f5f9;
+}

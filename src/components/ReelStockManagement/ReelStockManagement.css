@@ -1,0 +1,218 @@
+/* ReelStockManagement.css - Professional UI Refinements */
+
+.stock-management-container {
+  animation: slideUp 0.4s ease-out;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.page-title {
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+/* --- Main Card --- */
+.main-card {
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+}
+
+.bg-soft-primary {
+  background-color: rgba(26, 115, 232, 0.1);
+}
+
+/* --- Table Styles --- */
+.table-light-header th {
+  background-color: #f8fafc;
+  color: #64748b;
+  font-weight: 700;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  padding: 1rem 0.5rem;
+  border-bottom: 2px solid #f1f5f9;
+}
+
+.table-row-out {
+  background-color: #ef4444 !important; /* Vibrant Red-500 */
+  color: white !important;
+}
+
+.table-row-out td {
+  background-color: transparent !important;
+  color: white !important;
+}
+
+.table-row-out .text-muted, 
+.table-row-out .text-primary,
+.table-row-out .text-dark {
+  color: white !important; /* Force all text to white in red rows */
+}
+
+.table-hover tbody tr:hover {
+  background-color: #f1f5f9;
+}
+
+/* --- Badges & Pills --- */
+.shade-pill {
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border: 1px solid transparent;
+}
+
+.shade-n {
+  background-color: #f1f5f9;
+  color: #475569;
+  border-color: #e2e8f0;
+}
+
+.shade-g {
+  background-color: #fff7ed;
+  color: #c2410c;
+  border-color: #ffedd5;
+}
+
+.badge-in {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.85rem;
+  background-color: #ecfdf5;
+  color: #059669;
+  font-size: 0.7rem;
+  font-weight: 800;
+  border-radius: 8px;
+  letter-spacing: 0.02em;
+}
+
+.badge-out {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.85rem;
+  background-color: #fef2f2;
+  color: #dc2626;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 8px;
+}
+
+/* --- Custom Switch --- */
+.custom-switch {
+  width: 3.2rem !important;
+  height: 1.6rem !important;
+  cursor: pointer;
+}
+
+.custom-switch:checked {
+  background-color: #1a73e8;
+  border-color: #1a73e8;
+}
+
+/* --- Premium Pagination --- */
+.pagination-premium {
+  display: flex;
+  list-style: none;
+  padding: 0;
+  gap: 8px;
+}
+
+.page-item-custom {
+  display: flex;
+}
+
+.page-link-custom {
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #e2e8f0;
+  background-color: white;
+  color: #64748b;
+  font-weight: 700;
+  border-radius: 12px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.page-link-custom:hover {
+  background-color: #f8fafc;
+  border-color: #cbd5e1;
+  color: #1a73e8;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.page-item-custom.active .page-link-custom {
+  background-color: #1a73e8;
+  border-color: #1a73e8;
+  color: white;
+  box-shadow: 0 4px 15px rgba(26, 115, 232, 0.3);
+}
+
+.page-item-custom.disabled .page-link-custom {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background-color: #f1f5f9;
+  transform: none;
+  box-shadow: none;
+}
+
+/* --- Modal Refinements --- */
+.pro-modal {
+  border-radius: 24px;
+}
+
+.backdrop-blur {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.pro-label {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #64748b;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.pro-input {
+  border-radius: 10px;
+  padding: 0.65rem 1rem;
+  border: 1px solid #e2e8f0;
+  background-color: #f8fafc;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.pro-input:focus {
+  background-color: white;
+  border-color: #1a73e8;
+  box-shadow: 0 0 0 4px rgba(26, 115, 232, 0.1);
+}
+
+.pro-input-append {
+  border-radius: 0 10px 10px 0;
+  border: 1px solid #e2e8f0;
+  border-left: none;
+  font-weight: 700;
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+/* --- Utility --- */
+.input-group-merge .form-control {
+  border-left: none;
+}
+
+.input-group-merge .input-group-text {
+  border-right: none;
+}

@@ -1,0 +1,114 @@
+/* Header.css - Glassmorphism Header */
+
+.top-header {
+  height: var(--header-height);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1100;
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  border-bottom: 1px solid var(--glass-border);
+  box-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.05);
+}
+
+.header-content {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.5rem;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.logo-box {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  padding: 0.6rem;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+.header-title {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+}
+
+.profile-section {
+  display: flex;
+  align-items: center;
+}
+
+.user-name {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.avatar-box {
+  width: 36px;
+  height: 36px;
+  background-color: #f1f5f9;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1e293b;
+  border: 2px solid white;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.hamburger-btn {
+  display: flex;
+  background: none;
+  border: none;
+  color: #0f172a;
+  padding: 0.5rem;
+  cursor: pointer;
+  margin-right: 0.5rem;
+  border-radius: 8px;
+  transition: all 0.2s;
+  align-items: center;
+  justify-content: center;
+}
+
+.hamburger-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+@media (max-width: 767.98px) {
+  .header-title {
+    display: none;
+  }
+  .header-content {
+    padding: 0 1rem;
+  }
+  .user-name {
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap;
+  }
+}
+
+@media (max-width: 400px) {
+  .logo-box {
+    display: none;
+  }
+}
