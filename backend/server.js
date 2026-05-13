@@ -358,17 +358,8 @@ const start = async () => {
       'Warning: JWT_SECRET is missing or using the dev default. Set a strong JWT_SECRET for production (Render Environment).'
     );
   }
-  try {
-    await mongoose.connect(MONGO_URI);
-  } catch (err) {
-    throw new Error(
-      `MongoDB connection failed: ${err.message}. Check MONGO_URI, database user/password, and Atlas → Network Access (allow 0.0.0.0/0 for testing or Render outbound IPs).`
-    );
-  }
-  await seedInitialData();
-  // Render/Fly/Railway health checks hit the container from outside — must bind all interfaces.
-  // Do not use HOST=127.0.0.1 on PaaS (it breaks port detection). Optional LISTEN_HOST for advanced setups.
   const listenHost = process.env.LISTEN_HOST || '0.0.0.0';
+  // Render probes PORT soon after start — bind HTTP before MongoDB or deploy fails with "No open ports detected".
   await new Promise((resolve, reject) => {
     const server = app.listen(PORT, listenHost, () => {
       console.log(`Server listening on ${listenHost}:${PORT}`);
@@ -383,6 +374,16 @@ const start = async () => {
       reject(new Error(`Failed to listen on ${listenHost}:${PORT}: ${err.message}`));
     });
   });
+
+  try {
+    await mongoose.connect(MONGO_URI);
+  } catch (err) {
+    throw new Error(
+      `MongoDB connection failed: ${err.message}. Check MONGO_URI, database user/password, and Atlas → Network Access (allow 0.0.0.0/0 for testing or Render outbound IPs).`
+    );
+  }
+  await seedInitialData();
+  console.log('MongoDB connected and seed step finished.');
 };
 
 start().catch((error) => {
