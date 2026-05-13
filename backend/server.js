@@ -12,6 +12,15 @@ const dotenv = require('dotenv');
 dotenv.config({ path: path.join(__dirname, '.env') });
 dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
+process.on('unhandledRejection', (reason) => {
+  console.error('[fatal] UnhandledRejection:', reason);
+  process.exit(1);
+});
+process.on('uncaughtException', (err) => {
+  console.error('[fatal] UncaughtException:', err);
+  process.exit(1);
+});
+
 const app = express();
 const parsedPort = parseInt(process.env.PORT, 10);
 const PORT = Number.isFinite(parsedPort) && parsedPort > 0 ? parsedPort : 4000;
@@ -316,23 +325,35 @@ if (fs.existsSync(BUILD_INDEX)) {
 }
 
 const start = async () => {
+  const jwtFromEnv =
+    process.env.JWT_SECRET != null ? String(process.env.JWT_SECRET).trim() : '';
+
+  console.log(
+    '[boot]',
+    JSON.stringify({
+      node: process.version,
+      cwd: process.cwd(),
+      NODE_ENV: process.env.NODE_ENV || '',
+      PORT,
+      hasMongoUri: Boolean(MONGO_URI),
+      mongoUriLength: MONGO_URI ? MONGO_URI.length : 0,
+      hasJwtSecret: Boolean(jwtFromEnv),
+      jwtSecretLength: jwtFromEnv.length
+    })
+  );
+
   if (!MONGO_URI) {
     throw new Error(
       'MONGO_URI is not set. On Render: Dashboard → your Web Service → Environment → add MONGO_URI (MongoDB Atlas connection string) and JWT_SECRET. Local: copy backend/.env.example to backend/.env and fill in MONGO_URI.'
     );
   }
   if (process.env.NODE_ENV === 'production') {
-    const rawJwt = process.env.JWT_SECRET;
-    if (
-      !rawJwt ||
-      String(rawJwt).trim() === '' ||
-      rawJwt === 'dev-secret-change-me'
-    ) {
+    if (!jwtFromEnv || jwtFromEnv === 'dev-secret-change-me') {
       throw new Error(
         'JWT_SECRET is not set on Render. Open your Web Service → Environment → Add variable Key: JWT_SECRET (exact spelling). Value: a long random hex string from your PC: node -e "console.log(require(\'crypto\').randomBytes(64).toString(\'hex\'))". Save, then redeploy. (Do not put secrets in git; Render injects env at runtime.)'
       );
     }
-  } else if (!process.env.JWT_SECRET || process.env.JWT_SECRET === 'dev-secret-change-me') {
+  } else if (!jwtFromEnv || jwtFromEnv === 'dev-secret-change-me') {
     console.warn(
       'Warning: JWT_SECRET is missing or using the dev default. Set a strong JWT_SECRET for production (Render Environment).'
     );
