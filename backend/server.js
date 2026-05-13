@@ -13,7 +13,8 @@ dotenv.config({ path: path.join(__dirname, '.env') });
 dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
 const app = express();
-const PORT = process.env.PORT || 4000;
+const parsedPort = parseInt(process.env.PORT, 10);
+const PORT = Number.isFinite(parsedPort) && parsedPort > 0 ? parsedPort : 4000;
 const MONGO_URI = process.env.MONGO_URI;
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-me';
 const DB_PATH = path.join(__dirname, 'data', 'db.json');
@@ -320,9 +321,20 @@ const start = async () => {
       'MONGO_URI is not set. On Render: Dashboard → your Web Service → Environment → add MONGO_URI (MongoDB Atlas connection string) and JWT_SECRET. Local: copy backend/.env.example to backend/.env and fill in MONGO_URI.'
     );
   }
-  if (!JWT_SECRET || JWT_SECRET === 'dev-secret-change-me') {
+  if (process.env.NODE_ENV === 'production') {
+    const rawJwt = process.env.JWT_SECRET;
+    if (
+      !rawJwt ||
+      String(rawJwt).trim() === '' ||
+      rawJwt === 'dev-secret-change-me'
+    ) {
+      throw new Error(
+        'JWT_SECRET is not set on Render. Open your Web Service → Environment → Add variable Key: JWT_SECRET (exact spelling). Value: a long random hex string from your PC: node -e "console.log(require(\'crypto\').randomBytes(64).toString(\'hex\'))". Save, then redeploy. (Do not put secrets in git; Render injects env at runtime.)'
+      );
+    }
+  } else if (!process.env.JWT_SECRET || process.env.JWT_SECRET === 'dev-secret-change-me') {
     console.warn(
-      'Warning: JWT_SECRET is missing or using the dev default. Set a strong JWT_SECRET in production (Render Environment).'
+      'Warning: JWT_SECRET is missing or using the dev default. Set a strong JWT_SECRET for production (Render Environment).'
     );
   }
   try {
@@ -336,21 +348,31 @@ const start = async () => {
   // Render/Fly/Railway health checks hit the container from outside — must bind all interfaces.
   // Do not use HOST=127.0.0.1 on PaaS (it breaks port detection). Optional LISTEN_HOST for advanced setups.
   const listenHost = process.env.LISTEN_HOST || '0.0.0.0';
-  app.listen(PORT, listenHost, () => {
-    const url = `http://localhost:${PORT}`;
-    console.log(`Server listening on ${listenHost}:${PORT} (open ${url} locally when testing)`);
-    if (fs.existsSync(BUILD_INDEX)) {
-      console.log('Serving React app from / (production build)');
-    } else {
-      console.log('No ../build/index.html — run npm run build for production UI on this port');
-    }
+  await new Promise((resolve, reject) => {
+    const server = app.listen(PORT, listenHost, () => {
+      console.log(`Server listening on ${listenHost}:${PORT}`);
+      if (fs.existsSync(BUILD_INDEX)) {
+        console.log('Serving React app from / (production build)');
+      } else {
+        console.log('No ../build/index.html — run npm run build for production UI on this port');
+      }
+      resolve();
+    });
+    server.on('error', (err) => {
+      reject(new Error(`Failed to listen on ${listenHost}:${PORT}: ${err.message}`));
+    });
   });
 };
 
 start().catch((error) => {
   console.error('Failed to start server:', error.message);
+  if (error.stack) {
+    console.error(error.stack);
+  }
   if (process.env.NODE_ENV === 'production') {
-    console.error('(Set MONGO_URI and JWT_SECRET on your host. See server startup logs above.)');
+    console.error(
+      'Check Render → Environment: MONGO_URI, JWT_SECRET (exact key names). Atlas Network Access must allow Render.'
+    );
   }
   process.exit(1);
 });
