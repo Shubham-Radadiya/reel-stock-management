@@ -7,7 +7,10 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv');
 
+// Local: backend/.env or repo-root .env. Production (Render, etc.): set vars in the host dashboard
+// (dotenv does not override variables already set by the host)
 dotenv.config({ path: path.join(__dirname, '.env') });
+dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -313,9 +316,22 @@ if (fs.existsSync(BUILD_INDEX)) {
 
 const start = async () => {
   if (!MONGO_URI) {
-    throw new Error('MONGO_URI is missing. Add it in backend/.env');
+    throw new Error(
+      'MONGO_URI is not set. On Render: Dashboard → your Web Service → Environment → add MONGO_URI (MongoDB Atlas connection string) and JWT_SECRET. Local: copy backend/.env.example to backend/.env and fill in MONGO_URI.'
+    );
   }
-  await mongoose.connect(MONGO_URI);
+  if (!JWT_SECRET || JWT_SECRET === 'dev-secret-change-me') {
+    console.warn(
+      'Warning: JWT_SECRET is missing or using the dev default. Set a strong JWT_SECRET in production (Render Environment).'
+    );
+  }
+  try {
+    await mongoose.connect(MONGO_URI);
+  } catch (err) {
+    throw new Error(
+      `MongoDB connection failed: ${err.message}. Check MONGO_URI, database user/password, and Atlas → Network Access (allow 0.0.0.0/0 for testing or Render outbound IPs).`
+    );
+  }
   await seedInitialData();
   const host = process.env.HOST || '0.0.0.0';
   app.listen(PORT, host, () => {
@@ -331,5 +347,8 @@ const start = async () => {
 
 start().catch((error) => {
   console.error('Failed to start server:', error.message);
+  if (process.env.NODE_ENV === 'production') {
+    console.error('(Set MONGO_URI and JWT_SECRET on your host. See server startup logs above.)');
+  }
   process.exit(1);
 });

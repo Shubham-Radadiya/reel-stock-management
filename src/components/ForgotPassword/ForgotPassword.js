@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, ArrowLeft, Send, KeyRound, CheckCircle, Lock, Eye, EyeOff } from 'lucide-react';
+import { Mail, ArrowLeft, KeyRound, CheckCircle, Lock } from 'lucide-react';
 import './ForgotPassword.css';
 
 const ForgotPassword = ({ onBack, onPasswordReset }) => {
