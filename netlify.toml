@@ -1,0 +1,13 @@
+# Static React app (API stays on Render or elsewhere).
+# In Netlify: Site → Environment variables → add:
+#   REACT_APP_API_BASE_URL = https://YOUR-SERVICE.onrender.com/api
+# (no trailing slash after "api"). Redeploy after saving.
+
+[build]
+  command = "npm run build"
+  publish = "build"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
