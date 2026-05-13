@@ -525,18 +525,9 @@ const Report = ({ reels }) => {
                       onChange={(e) => {
                         const v = e.target.value;
                         setAnalyticsDayInput(v);
-                        if (parseYmd(v)) {
-                          setAnalyticsDayApplied(v);
-                        }
+                        setAnalyticsDayApplied(v);
                       }}
                     />
-                    <button
-                      type="button"
-                      className="btn btn-primary daily-show-btn"
-                      onClick={() => setAnalyticsDayApplied(analyticsDayInput)}
-                    >
-                      Show Entries
-                    </button>
                   </>
                 )}
                 {analyticsPeriod === 'week' && (
