@@ -522,7 +522,13 @@ const Report = ({ reels }) => {
                       type="date"
                       className="form-control daily-date-input"
                       value={analyticsDayInput}
-                      onChange={(e) => setAnalyticsDayInput(e.target.value)}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setAnalyticsDayInput(v);
+                        if (parseYmd(v)) {
+                          setAnalyticsDayApplied(v);
+                        }
+                      }}
                     />
                     <button
                       type="button"
