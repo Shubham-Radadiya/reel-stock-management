@@ -31,6 +31,24 @@ const DB_PATH = path.join(__dirname, 'data', 'db.json');
 app.use(cors());
 app.use(express.json());
 
+/** Avoid 502 when Mongo is slow or misconfigured: keep HTTP up; API returns 503 until DB connects. */
+app.use((req, res, next) => {
+  if (!req.path.startsWith('/api')) {
+    return next();
+  }
+  if (req.path === '/api/health') {
+    return next();
+  }
+  if (mongoose.connection.readyState === 1) {
+    return next();
+  }
+  return res.status(503).json({
+    message:
+      'Database is not available. On Render: check MONGO_URI and Atlas → Network Access (allow 0.0.0.0/0 for testing).',
+    mongoReadyState: mongoose.connection.readyState
+  });
+});
+
 const userSchema = new mongoose.Schema(
   {
     username: { type: String, required: true, unique: true },
@@ -174,7 +192,13 @@ const seedInitialData = async () => {
 };
 
 app.get('/api/health', (req, res) => {
-  res.json({ ok: true, message: 'API is running' });
+  const dbOk = mongoose.connection.readyState === 1;
+  res.json({
+    ok: true,
+    message: 'API is running',
+    database: dbOk ? 'connected' : 'disconnected',
+    mongoReadyState: mongoose.connection.readyState
+  });
 });
 
 app.post('/api/auth/login', async (req, res) => {
@@ -375,15 +399,32 @@ const start = async () => {
     });
   });
 
-  try {
-    await mongoose.connect(MONGO_URI);
-  } catch (err) {
-    throw new Error(
-      `MongoDB connection failed: ${err.message}. Check MONGO_URI, database user/password, and Atlas → Network Access (allow 0.0.0.0/0 for testing or Render outbound IPs).`
-    );
-  }
-  await seedInitialData();
-  console.log('MongoDB connected and seed step finished.');
+  void (async () => {
+    for (;;) {
+      if (mongoose.connection.readyState === 1) {
+        return;
+      }
+      try {
+        await mongoose.connect(MONGO_URI);
+        try {
+          await seedInitialData();
+          console.log('MongoDB connected and seed step finished.');
+        } catch (seedErr) {
+          console.error('Seed failed (Mongo is connected):', seedErr.message);
+        }
+        return;
+      } catch (err) {
+        console.error(
+          'MongoDB connection failed, retrying in 5s:',
+          err.message,
+          '(check MONGO_URI and Atlas Network Access)'
+        );
+        await new Promise((r) => setTimeout(r, 5000));
+      }
+    }
+  })().catch((e) => {
+    console.error('[fatal] Mongo background loop:', e);
+  });
 };
 
 start().catch((error) => {
@@ -393,7 +434,7 @@ start().catch((error) => {
   }
   if (process.env.NODE_ENV === 'production') {
     console.error(
-      'Check Render → Environment: MONGO_URI, JWT_SECRET (exact key names). Atlas Network Access must allow Render.'
+      'Check Render → Environment: MONGO_URI, JWT_SECRET (exact key names). Atlas Network Access must allow Render. GET /api/health shows database status once the process is up.'
     );
   }
   process.exit(1);
