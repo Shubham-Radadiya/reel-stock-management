@@ -14,7 +14,9 @@ dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
 process.on('unhandledRejection', (reason) => {
   console.error('[fatal] UnhandledRejection:', reason);
-  process.exit(1);
+  if (reason && typeof reason === 'object' && 'stack' in reason && reason.stack) {
+    console.error(reason.stack);
+  }
 });
 process.on('uncaughtException', (err) => {
   console.error('[fatal] UncaughtException:', err);
@@ -25,8 +27,24 @@ const app = express();
 const parsedPort = parseInt(process.env.PORT, 10);
 const PORT = Number.isFinite(parsedPort) && parsedPort > 0 ? parsedPort : 4000;
 const MONGO_URI = process.env.MONGO_URI;
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-me';
 const DB_PATH = path.join(__dirname, 'data', 'db.json');
+
+const getJwtSecret = () =>
+  process.env.JWT_SECRET != null ? String(process.env.JWT_SECRET).trim() : '';
+
+/** In production, require a real secret (Render should set NODE_ENV=production via npm run live). */
+const isProductionJwtReady = () => {
+  if (process.env.NODE_ENV !== 'production') {
+    return true;
+  }
+  const s = getJwtSecret();
+  return Boolean(s) && s !== 'dev-secret-change-me';
+};
+
+const jwtSecretForAuth = () => {
+  const s = getJwtSecret();
+  return s || 'dev-secret-change-me';
+};
 
 app.use(cors());
 app.use(express.json());
@@ -47,6 +65,22 @@ app.use((req, res, next) => {
       'Database is not available. On Render: check MONGO_URI and Atlas → Network Access (allow 0.0.0.0/0 for testing).',
     mongoReadyState: mongoose.connection.readyState
   });
+});
+
+app.use((req, res, next) => {
+  if (!req.path.startsWith('/api')) {
+    return next();
+  }
+  if (req.path === '/api/health') {
+    return next();
+  }
+  if (!isProductionJwtReady()) {
+    return res.status(503).json({
+      message:
+        'Server auth is not configured. On Render: set JWT_SECRET (long random string, not dev-secret-change-me).'
+    });
+  }
+  return next();
 });
 
 const userSchema = new mongoose.Schema(
@@ -105,7 +139,7 @@ const createToken = (user) =>
       email: user.email,
       role: user.role
     },
-    JWT_SECRET,
+    jwtSecretForAuth(),
     { expiresIn: '7d' }
   );
 
@@ -120,7 +154,7 @@ const authenticate = async (req, res, next) => {
   }
 
   try {
-    const payload = jwt.verify(token, JWT_SECRET);
+    const payload = jwt.verify(token, jwtSecretForAuth());
     const user = await User.findById(payload.sub);
     if (!user) {
       return res.status(401).json({ message: 'Invalid auth token' });
@@ -197,7 +231,12 @@ app.get('/api/health', (req, res) => {
     ok: true,
     message: 'API is running',
     database: dbOk ? 'connected' : 'disconnected',
-    mongoReadyState: mongoose.connection.readyState
+    mongoReadyState: mongoose.connection.readyState,
+    configuration: {
+      hasMongoUri: Boolean(MONGO_URI),
+      productionJwtReady: isProductionJwtReady(),
+      nodeEnv: process.env.NODE_ENV || ''
+    }
   });
 });
 
@@ -375,8 +414,7 @@ if (fs.existsSync(BUILD_INDEX)) {
 }
 
 const start = async () => {
-  const jwtFromEnv =
-    process.env.JWT_SECRET != null ? String(process.env.JWT_SECRET).trim() : '';
+  const jwtFromEnv = getJwtSecret();
 
   console.log(
     '[boot]',
@@ -388,28 +426,31 @@ const start = async () => {
       hasMongoUri: Boolean(MONGO_URI),
       mongoUriLength: MONGO_URI ? MONGO_URI.length : 0,
       hasJwtSecret: Boolean(jwtFromEnv),
-      jwtSecretLength: jwtFromEnv.length
+      jwtSecretLength: jwtFromEnv.length,
+      productionJwtReady: isProductionJwtReady()
     })
   );
 
   if (!MONGO_URI) {
-    throw new Error(
-      'MONGO_URI is not set. On Render: Dashboard → your Web Service → Environment → add MONGO_URI (MongoDB Atlas connection string) and JWT_SECRET. Local: copy backend/.env.example to backend/.env and fill in MONGO_URI.'
+    console.error(
+      'MONGO_URI is not set. /api/health will still respond; set MONGO_URI on Render to enable the database.'
     );
   }
-  if (process.env.NODE_ENV === 'production') {
-    if (!jwtFromEnv || jwtFromEnv === 'dev-secret-change-me') {
-      throw new Error(
-        'JWT_SECRET is not set on Render. Open your Web Service → Environment → Add variable Key: JWT_SECRET (exact spelling). Value: a long random hex string from your PC: node -e "console.log(require(\'crypto\').randomBytes(64).toString(\'hex\'))". Save, then redeploy. (Do not put secrets in git; Render injects env at runtime.)'
-      );
-    }
-  } else if (!jwtFromEnv || jwtFromEnv === 'dev-secret-change-me') {
+  if (process.env.NODE_ENV === 'production' && !isProductionJwtReady()) {
+    console.error(
+      'JWT_SECRET is missing or uses the dev placeholder in production. Authenticated routes will return 503 until you set JWT_SECRET on Render.'
+    );
+  } else if (
+    process.env.NODE_ENV !== 'production' &&
+    (!jwtFromEnv || jwtFromEnv === 'dev-secret-change-me')
+  ) {
     console.warn(
       'Warning: JWT_SECRET is missing or using the dev default. Set a strong JWT_SECRET for production (Render Environment).'
     );
   }
+
   const listenHost = process.env.LISTEN_HOST || '0.0.0.0';
-  // Render probes PORT soon after start — bind HTTP before MongoDB or deploy fails with "No open ports detected".
+  // Bind HTTP first so Render always sees an open port; env/DB issues are surfaced via /api/health instead of 502.
   await new Promise((resolve, reject) => {
     const server = app.listen(PORT, listenHost, () => {
       console.log(`Server listening on ${listenHost}:${PORT}`);
@@ -425,11 +466,12 @@ const start = async () => {
     });
   });
 
+  if (!MONGO_URI) {
+    return;
+  }
+
   void (async () => {
     for (;;) {
-      if (mongoose.connection.readyState === 1) {
-        return;
-      }
       try {
         await mongoose.connect(MONGO_URI);
         try {
