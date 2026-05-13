@@ -202,23 +202,49 @@ app.get('/api/health', (req, res) => {
 });
 
 app.post('/api/auth/login', async (req, res) => {
-  const { username, password } = req.body;
-  const user = await User.findOne({ username });
+  try {
+    const { username, password } = req.body || {};
+    if (
+      typeof username !== 'string' ||
+      typeof password !== 'string' ||
+      !username.trim() ||
+      password.length === 0
+    ) {
+      return res
+        .status(400)
+        .json({ message: 'Username and password are required' });
+    }
 
-  if (!user) {
-    return res.status(401).json({ message: 'Invalid username or password' });
+    const user = await User.findOne({ username: username.trim() });
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid username or password' });
+    }
+
+    const hash = user.passwordHash;
+    if (typeof hash !== 'string' || !hash.startsWith('$2')) {
+      console.error(
+        '[login] User has no bcrypt passwordHash; reset user in DB or re-seed admin.'
+      );
+      return res.status(401).json({ message: 'Invalid username or password' });
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, hash);
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: 'Invalid username or password' });
+    }
+
+    return res.json({
+      message: 'Login successful',
+      token: createToken(user),
+      user: user.toJSON()
+    });
+  } catch (err) {
+    console.error('[login]', err && err.message ? err.message : err);
+    if (err && err.stack) {
+      console.error(err.stack);
+    }
+    return res.status(500).json({ message: 'Login failed' });
   }
-
-  const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
-  if (!isPasswordValid) {
-    return res.status(401).json({ message: 'Invalid username or password' });
-  }
-
-  return res.json({
-    message: 'Login successful',
-    token: createToken(user),
-    user: user.toJSON()
-  });
 });
 
 app.get('/api/auth/me', authenticate, async (req, res) => {
